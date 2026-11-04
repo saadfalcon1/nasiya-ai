@@ -1,0 +1,4 @@
+# Ovozli xabarlar: Meta MMS (facebook/mms-1b-all) serverda, CPU'da.
+# setup.sh o'zi o'rnatadi:  pip install --index-url https://download.pytorch.org/whl/cpu torch  &&  pip install -r requirements-voice.txt
+transformers>=4.44
+numpy

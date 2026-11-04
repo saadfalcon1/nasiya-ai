@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nasiya AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+{% verbatim %}
+<style>
+:root {
+  --bg: var(--tg-theme-secondary-bg-color, #f1f2f6);
+  --card: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, #ffffff));
+  --text: var(--tg-theme-text-color, #111318);
+  --hint: var(--tg-theme-hint-color, #8b919c);
+  --link: var(--tg-theme-link-color, #2b7de9);
+  --accent: var(--tg-theme-button-color, #2b7de9);
+  --accent-text: var(--tg-theme-button-text-color, #ffffff);
+  --sep: rgba(128, 132, 145, .18);
+  --cash: #2b7de9;
+  --credit: #f2a60d;
+  --good: #1aa260;
+  --bad: #e5484d;
+  --warn: #f2a60d;
+  --muted-bg: rgba(128, 132, 145, .12);
+  --radius: 14px;
+  --nav-h: 62px;
+}
+:root[data-theme="dark"] {
+  --bg: #0f1115; --card: #1b1e24; --text: #f2f3f5; --hint: #8a909b; --link: #5ea3ff;
+  --accent: #3b8cf0; --sep: rgba(255,255,255,.08); --muted-bg: rgba(255,255,255,.07);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+body { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); overflow-x: hidden; }
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+input { font: inherit; color: var(--text); }
+.wrap { max-width: 640px; margin: 0 auto; padding: 12px 16px 24px; }
+.hidden { display: none !important; }
+
+/* header */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 2px 12px; }
+.top h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: -.2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top .sub { color: var(--hint); font-size: 13px; }
+
+/* segmented */
+.seg { display: inline-flex; background: var(--muted-bg); border-radius: 10px; padding: 3px; flex-shrink: 0; }
+.seg button { padding: 6px 11px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--hint); }
+.seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+/* cards */
+.card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.card h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--hint); text-transform: uppercase; letter-spacing: .4px; }
+.hero .label { color: var(--hint); font-size: 13px; }
+.hero .big { font-size: 32px; font-weight: 750; letter-spacing: -.8px; line-height: 1.15; margin: 2px 0 8px; font-variant-numeric: tabular-nums; }
+.hero .big small { font-size: 15px; font-weight: 600; color: var(--hint); letter-spacing: 0; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 650; vertical-align: middle; }
+.chip.up { background: rgba(26,162,96,.13); color: var(--good); }
+.chip.down { background: rgba(229,72,77,.13); color: var(--bad); }
+.split { display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; }
+.split span b { font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.bar100 { display: flex; height: 6px; border-radius: 4px; overflow: hidden; background: var(--muted-bg); margin-top: 10px; }
+.bar100 i { display: block; height: 100%; }
+
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.tile { background: var(--card); border-radius: var(--radius); padding: 12px; min-width: 0; text-align: left; }
+.tile .k { color: var(--hint); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .v { font-size: 17px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .s { color: var(--hint); font-size: 11.5px; margin-top: 1px; }
+.tile.link .v { color: var(--link); }
+
+/* chart */
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: 170px; }
+.chart .tip { min-height: 20px; font-size: 13px; color: var(--hint); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.chart .tip b { color: var(--text); }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--hint); margin-top: 2px; }
+
+/* lists */
+.list { background: var(--card); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+.row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; position: relative; width: 100%; text-align: left; }
+.row + .row::before { content: ""; position: absolute; top: 0; left: 64px; right: 0; height: 1px; background: var(--sep); }
+.row.noav + .row.noav::before { left: 16px; }
+.row .main { flex: 1; min-width: 0; }
+.row .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .d { color: var(--hint); font-size: 13px; margin-top: 1px; display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.row .amt { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.row .amt small { display: block; font-weight: 500; font-size: 12px; color: var(--hint); }
+.av { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; flex-shrink: 0; font-size: 15px; }
+.ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; background: var(--muted-bg); }
+.tag { font-size: 11.5px; font-weight: 650; padding: 1px 7px; border-radius: 6px; background: var(--muted-bg); color: var(--hint); white-space: nowrap; }
+.tag.red { background: rgba(229,72,77,.13); color: var(--bad); }
+.tag.amber { background: rgba(242,166,13,.15); color: #c98400; }
+.tag.green { background: rgba(26,162,96,.13); color: var(--good); }
+.tag.blue { background: rgba(43,125,233,.13); color: var(--cash); }
+.pos { color: var(--good); } .neg { color: var(--bad); } .cr { color: #c98400; }
+
+.tips .tipc { background: var(--card); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; font-size: 14px; line-height: 1.45; }
+.tips .tipc b { font-weight: 650; }
+
+.search { width: 100%; padding: 10px 14px; border-radius: 12px; border: 0; background: var(--card); outline: none; margin-bottom: 10px; }
+.chips { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 12px; padding: 0 16px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { padding: 7px 12px; border-radius: 999px; background: var(--card); font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--hint); }
+.chips button.on { background: var(--accent); color: var(--accent-text); }
+.toggle { display: flex; align-items: center; justify-content: space-between; color: var(--hint); font-size: 13px; margin: -2px 2px 10px; }
+.toggle button { color: var(--link); font-weight: 600; font-size: 13px; }
+
+.meter { height: 5px; border-radius: 3px; background: var(--muted-bg); overflow: hidden; margin-top: 6px; }
+.meter i { display: block; height: 100%; border-radius: 3px; }
+
+.btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; border-radius: 12px;
+  background: var(--accent); color: var(--accent-text); font-weight: 650; }
+.btn.ghost { background: var(--muted-bg); color: var(--text); }
+.btn:disabled { opacity: .55; }
+.btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.btns .btn { flex-direction: column; gap: 2px; padding: 10px 6px; font-size: 13px; }
+.btns .btn span { font-size: 20px; }
+.more { display: block; margin: 0 auto 12px; color: var(--link); font-weight: 600; padding: 8px 16px; }
+
+.empty { text-align: center; color: var(--hint); padding: 32px 16px; }
+.empty .e { font-size: 40px; margin-bottom: 6px; }
+
+/* nav */
+nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--sep);
+  display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 10; }
+nav button { flex: 1; height: var(--nav-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-size: 11px; font-weight: 600; color: var(--hint); }
+nav button .i { font-size: 21px; line-height: 1; filter: grayscale(1); opacity: .7; }
+nav button.on { color: var(--accent); }
+nav button.on .i { filter: none; opacity: 1; }
+
+/* sheet */
+.sheet { position: fixed; inset: 0; background: var(--bg); z-index: 20; overflow-y: auto; transform: translateX(100%);
+  transition: transform .22s ease; padding-bottom: env(safe-area-inset-bottom); }
+.sheet.open { transform: none; }
+.sheet .bar { position: sticky; top: 0; background: var(--bg); display: flex; align-items: center; gap: 8px; padding: 10px 12px; z-index: 2; }
+.sheet .bar button { color: var(--link); font-weight: 600; padding: 4px 6px; }
+.field { display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
+.field + .field { border-top: 1px solid var(--sep); }
+.field label { width: 92px; color: var(--hint); font-size: 14px; flex-shrink: 0; }
+.field input { flex: 1; min-width: 0; border: 0; background: none; outline: none; padding: 4px 0; }
+.err { color: var(--bad); font-size: 12px; padding: 0 16px 8px; }
+.quote { background: var(--muted-bg); border-left: 3px solid var(--accent); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; font-size: 14px; margin: 8px 0 12px; }
+.note { color: var(--hint); font-size: 13px; line-height: 1.45; }
+
+.toast { position: fixed; left: 50%; bottom: calc(var(--nav-h) + 16px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px);
+  background: rgba(20,22,28,.92); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; opacity: 0;
+  transition: .2s; z-index: 50; max-width: calc(100% - 32px); text-align: center; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%); }
+
+.sk { background: linear-gradient(90deg, var(--muted-bg), rgba(128,132,145,.2), var(--muted-bg)); background-size: 200% 100%;
+  animation: sk 1.2s infinite; border-radius: var(--radius); }
+@keyframes sk { to { background-position: -200% 0; } }
+
+.review { display: flex; gap: 8px; margin-top: 8px; }
+.review button { flex: 1; padding: 8px; border-radius: 10px; font-weight: 650; font-size: 14px; }
+.review .yes { background: rgba(26,162,96,.13); color: var(--good); }
+.review .no { background: rgba(229,72,77,.12); color: var(--bad); }
+.items { color: var(--hint); font-size: 13px; }
+.langbtn { padding: 6px 10px; border-radius: 10px; background: var(--muted-bg); font-size: 13px; font-weight: 700; color: var(--hint); flex-shrink: 0; }
+.langmenu { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.25); display: flex; align-items: flex-start; justify-content: flex-end; padding: 56px 16px; }
+.langmenu .box { background: var(--card); border-radius: 14px; overflow: hidden; min-width: 190px; box-shadow: 0 8px 30px rgba(0,0,0,.18); }
+.langmenu button { display: block; width: 100%; text-align: left; padding: 13px 16px; font-size: 15px; }
+.langmenu button + button { border-top: 1px solid var(--sep); }
+.langmenu button.on { color: var(--accent); font-weight: 700; }
+.top .right { display: flex; gap: 8px; align-items: center; }
+</style>
+{% endverbatim %}
+</head>
+<body>
+<div class="wrap" id="root">
+  <div class="sk" style="height:28px;width:55%;margin:6px 0 16px"></div>
+  <div class="sk" style="height:140px;margin-bottom:12px"></div>
+  <div class="sk" style="height:70px;margin-bottom:12px"></div>
+  <div class="sk" style="height:200px"></div>
+</div>
+
+<nav id="nav" class="hidden"></nav>
+
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+{% verbatim %}
+<script>
+"use strict";
+const tg = window.Telegram && window.Telegram.WebApp;
+const qs = new URLSearchParams(location.search);
+const DEV_AS = qs.get("as");
+if (qs.get("theme") === "dark" || (tg && tg.colorScheme === "dark" && !tg.initData)) document.documentElement.dataset.theme = "dark";
+if (tg) { tg.ready(); tg.expand(); try { tg.setHeaderColor("secondary_bg_color"); tg.setBackgroundColor("secondary_bg_color"); } catch (e) {} }
+
+/* ================= TILLAR ================= */
+const I18N = {
+  uz: {
+    som: "so'm", mlrd: "mlrd", mln: "mln", ming: "ming",
+    nav_home: "Bosh", nav_debt: "Qarzlar", nav_stock: "Ombor", nav_hist: "Tarix",
+    p_bugun: "Bugun", p_hafta: "Hafta", p_oy: "Oy",
+    open_tg: "Telegram orqali oching", open_tg_t: "Bu sahifa Nasiya AI bot ichida ishlaydi.<br>Botdagi <b>📊 Do'kon</b> tugmasini bosing.",
+    reg_first: "Avval botda ro'yxatdan o'ting", reg_first_t: "Botni oching va <b>/start</b> bosing: do'kon egasi yoki xaridor ekaningizni tanlang.",
+    load_fail: "Ma'lumot yuklanmadi", retry: "Qayta urinish",
+    promises_due: "🤝 To'lov kuni keldi", late_days: "{n} kun kechikdi", today: "bugun", whole: "butun qarz", remind_btn: "🔔 Eslatish",
+    tips: "🧠 Menejer tavsiyalari", no_tips: "🧠 Hozircha tavsiyalar yo'q — savdo ko'paygan sari aniqroq bo'ladi.",
+    top: "🏆 Eng ko'p sotilgan", sales: "Savdo", cash: "Naqd", credit: "Nasiya", profit: "Foyda",
+    cash_in: "💵 Kassaga", payments: "to'lovlar {v}", profit_k: "📈 Foyda", approx: "taxminan", no_cost: "tannarx yo'q",
+    on_credit: "📝 Nasiyada", n_cust: "{n} mijoz ›", daily_sales: "Kunlik savdo", tap_bar: "Ustunni bosing",
+    tip_line: "<b>{d}-sana ({w})</b> · savdo <b>{s}</b> · naqd {c} · nasiya {n} · foyda <b class=\"pos\">{p}</b>",
+    debtors: "Qarzdorlar", debt_sub: "Jami nasiyada <b style=\"color:var(--text)\">{amt}</b> · {n} mijoz",
+    search: "🔍 Ism bo'yicha qidirish", s_sum: "💰 Summa", s_late: "⏰ Kechikkan", s_prom: "🤝 Va'dalar",
+    all_c: "Barcha mijozlar", only_debt: "Faqat qarzi borlar", show_debtors: "Qarzdorlar", show_all: "Hammasini ko'rsatish",
+    t_days: "⏰ {n} kun", days_ago: "{n} kun oldin", t_limit: "⚠️ limit", t_disputed: "❗ rad",
+    not_found: "Topilmadi", no_promises: "Ochiq va'dalar yo'q", no_debtors: "Hech kim qarzdor emas",
+    back: "‹ Orqaga", loading_fail: "Yuklanmadi",
+    via_tg: "📱 Telegram orqali", via_sms: "✉️ SMS orqali ({p})", limit_l: "Limit: {v}", exceeded: "— oshgan",
+    confirmed_tag: "✅ tasdiqladi", disputed_tag: "❌ rad etdi", no_records: "Yozuvlar yo'q",
+    kept: "bajarildi", waiting: "kutilmoqda", last_rem: "Oxirgi eslatmalar: {list}",
+    linked: "📱 Botga ulangan", not_linked: "Ulanmagan", debt: "Qarz", since_pay: "Oxirgi to'lovdan beri {n} kun",
+    n_disputed: "❗ {n} ta yozuv rad etilgan",
+    linked_note: "📱 <b style=\"color:var(--text)\">Telegramga ulangan</b> — yozuvlar va eslatmalar unga o'zi boradi.",
+    auto_note: " 🤖 Avto-eslatma: har kuni {h}:00 da (kerak bo'lsa).",
+    unlinked_note: "📵 <b style=\"color:var(--text)\">Telegramga ulanmagan.</b> Telefonini kiriting va mijozga ayting: botni ochib <b style=\"color:var(--text)\">«📱 Raqamimni yuborish»</b> tugmasini bossin — raqami bo'yicha avtomatik ulanadi. Yoki «Ulash» havolasini yuboring.",
+    b_remind: "Eslatma", b_link: "Havola", b_connect: "Ulash", b_call: "Qo'ng'iroq", b_phone: "Telefon",
+    rem_text: "Eslatma matni", send: "📨 Yuborish", sending: "Yuborilmoqda...", sent: "✅ Yuborildi", resend: "📨 Qayta yuborish",
+    rem_sent: "✅ Eslatma yuborildi", rem_fail: "⚠️ Yuborilmadi", error: "⚠️ Xatolik",
+    no_channel: "⚠️ Mijoz botga ulanmagan va telefoni yo'q. Avval havolani yuboring yoki telefonini kiriting.",
+    share_link: "🔗 Ulash havolasini yuborish",
+    share_text: "Assalomu alaykum! \"{shop}\" do'konidagi hisobingizni shu yerda ko'rishingiz mumkin:",
+    settings: "Sozlamalar", phone: "Telefon", limit: "Limit", limit_ph: "masalan, 500 000", save: "Saqlash", saved: "✅ Saqlandi", not_saved: "Saqlanmadi",
+    promises: "Va'dalar", history: "Tarix",
+    st_low: "🔴 tugayapti", st_neg: "❗ manfiy", st_loss: "❌ zarar", st_slow: "🧊 turib qolgan", st_daily: "🔄 har kuni",
+    daily_comes: "har kuni keladi", days_left: "~{n} kunga yetadi", per_day: "kuniga {v} {u}", frozen: "{v} muzlagan",
+    margin: "{v}% foyda", cost_sell: "tannarx {c} → sotuv {s}", none_here: "Bu bo'limda tovar yo'q",
+    stock_empty: "Ombor bo'sh. Botga yozing: <i>10 qop un keldi, har biri 280 ming</i>",
+    stock: "Ombor", stock_sub: "Tovar qiymati <b style=\"color:var(--text)\">{v}</b> (tannarxda)",
+    f_all: "Hammasi", f_low: "🔴 Tugayapti", f_slow: "🧊 Turib qolgan", f_loss: "❌ Zarar", f_daily: "🔄 Har kuni",
+    shelf: "📸 Javon tahlili", shelf_counted: "{k} xil tovar, ~{n} dona", empty_spots: " · bo'sh joy: {n}",
+    unrec: "🚨 Yozilmagan sotuv", vs_photo: "({t} dagi suratga nisbatan)",
+    unrec_row: "• {name}: suratda −{p}, yozilgan {r} → <b class=\"neg\">{g} {u}</b>", matches: "✅ Ertalabki surat bilan farq yozilgan savdoga mos",
+    shelf_low: "🛒 Javonda kam qoldi", none_storage: "omborda ham yo'q", in_storage: "omborda {v}",
+    not_seen: "👀 Oldingi suratda bor edi, endi yo'q: {list}", not_in_db: "❔ Bazada yo'q: {list} — botga kirim qilib yozing",
+    evening: "💡 Kechqurun yana suratga oling — kun davomida yozilmagan sotuvni topaman.",
+    shelf_hint: "📸 Botga <b style=\"color:var(--text)\">javon rasmini</b> yuboring — tovarlarni sanab, nima kam qolganini ko'rsataman. Ertalab va kechqurun olsangiz, yozilmagan sotuvni topaman.",
+    hist: "Tarix", all_records: "Barcha yozuvlar", k_all: "Hammasi", k_nasiya: "📝 Nasiya", k_tolov: "💵 To'lov", k_sotuv: "💰 Naqd", k_kirim: "📦 Kirim",
+    debt_payment: "qarz to'lovi", more: "Yana yuklash", h_disputed: "❌ rad",
+    hello: "Assalomu alaykum, {name}!", your_debt: "Qarzingiz", pay_day: "🤝 To'lov kuni: <b>{d}</b>", days_passed: "{n} kun o'tdi",
+    no_debt: "Qarzingiz yo'q. Rahmat! 🙏", pending: "🔎 <b style=\"color:var(--text)\">{n} ta yozuv</b> tasdig'ingizni kutmoqda. Har birini tekshirib, ✅ yoki ❌ bosing.",
+    c_confirmed: "✅ tasdiqlangan", c_disputed: "❌ rad etilgan", c_payment: "To'lov", c_credit: "Nasiya", correct: "✅ To'g'ri", wrong: "❌ Xato",
+    questions: "Savollar bo'lsa, do'konchiga murojaat qiling.", confirm_dispute: "Bu yozuv xato ekanini do'konchiga xabar qilamizmi?",
+    thanks: "✅ Rahmat!", shop_told: "Do'konchiga xabar berildi", lang: "Til",
+    u_dona: "dona", u_kg: "kg", u_litr: "litr", u_qop: "qop", u_pachka: "pachka", u_quti: "quti", u_blok: "blok", u_shisha: "shisha", u_g: "g",
+  },
+  ru: {
+    som: "сум", mlrd: "млрд", mln: "млн", ming: "тыс.",
+    nav_home: "Главная", nav_debt: "Долги", nav_stock: "Склад", nav_hist: "История",
+    p_bugun: "Сегодня", p_hafta: "Неделя", p_oy: "Месяц",
+    open_tg: "Откройте через Telegram", open_tg_t: "Эта страница работает внутри бота Nasiya AI.<br>Нажмите кнопку <b>📊 Магазин</b> в боте.",
+    reg_first: "Сначала зарегистрируйтесь в боте", reg_first_t: "Откройте бота и нажмите <b>/start</b>: выберите, вы владелец магазина или покупатель.",
+    load_fail: "Не удалось загрузить данные", retry: "Повторить",
+    promises_due: "🤝 Срок оплаты наступил", late_days: "просрочено на {n} дн.", today: "сегодня", whole: "весь долг", remind_btn: "🔔 Напомнить",
+    tips: "🧠 Советы менеджера", no_tips: "🧠 Пока советов нет — они станут точнее с ростом продаж.",
+    top: "🏆 Топ продаж", sales: "Продажи", cash: "Наличные", credit: "В долг", profit: "Прибыль",
+    cash_in: "💵 В кассу", payments: "оплаты {v}", profit_k: "📈 Прибыль", approx: "примерно", no_cost: "нет себестоимости",
+    on_credit: "📝 В долгах", n_cust: "{n} клиентов ›", daily_sales: "Продажи по дням", tap_bar: "Нажмите на столбец",
+    tip_line: "<b>{d} число ({w})</b> · продажи <b>{s}</b> · наличные {c} · в долг {n} · прибыль <b class=\"pos\">{p}</b>",
+    debtors: "Должники", debt_sub: "Всего в долг <b style=\"color:var(--text)\">{amt}</b> · {n} клиентов",
+    search: "🔍 Поиск по имени", s_sum: "💰 Сумма", s_late: "⏰ Просрочка", s_prom: "🤝 Обещания",
+    all_c: "Все клиенты", only_debt: "Только с долгом", show_debtors: "Должники", show_all: "Показать всех",
+    t_days: "⏰ {n} дн.", days_ago: "{n} дн. назад", t_limit: "⚠️ лимит", t_disputed: "❗ оспорено",
+    not_found: "Не найдено", no_promises: "Открытых обещаний нет", no_debtors: "Должников нет",
+    back: "‹ Назад", loading_fail: "Не загрузилось",
+    via_tg: "📱 Через Telegram", via_sms: "✉️ По SMS ({p})", limit_l: "Лимит: {v}", exceeded: "— превышен",
+    confirmed_tag: "✅ подтвердил", disputed_tag: "❌ оспорил", no_records: "Записей нет",
+    kept: "выполнено", waiting: "ожидается", last_rem: "Последние напоминания: {list}",
+    linked: "📱 Подключён к боту", not_linked: "Не подключён", debt: "Долг", since_pay: "{n} дн. с последней оплаты",
+    n_disputed: "❗ оспорено записей: {n}",
+    linked_note: "📱 <b style=\"color:var(--text)\">Подключён к Telegram</b> — записи и напоминания приходят ему сами.",
+    auto_note: " 🤖 Автонапоминание: каждый день в {h}:00 (если нужно).",
+    unlinked_note: "📵 <b style=\"color:var(--text)\">Не подключён к Telegram.</b> Введите телефон и попросите клиента открыть бота и нажать <b style=\"color:var(--text)\">«📱 Отправить мой номер»</b> — подключится автоматически по номеру. Или отправьте ссылку «Подключить».",
+    b_remind: "Напомнить", b_link: "Ссылка", b_connect: "Подключить", b_call: "Позвонить", b_phone: "Телефон",
+    rem_text: "Текст напоминания", send: "📨 Отправить", sending: "Отправка...", sent: "✅ Отправлено", resend: "📨 Отправить снова",
+    rem_sent: "✅ Напоминание отправлено", rem_fail: "⚠️ Не отправлено", error: "⚠️ Ошибка",
+    no_channel: "⚠️ Клиент не подключён к боту и нет телефона. Сначала отправьте ссылку или введите телефон.",
+    share_link: "🔗 Отправить ссылку для подключения",
+    share_text: "Здравствуйте! Ваш счёт в магазине «{shop}» можно посмотреть здесь:",
+    settings: "Настройки", phone: "Телефон", limit: "Лимит", limit_ph: "например, 500 000", save: "Сохранить", saved: "✅ Сохранено", not_saved: "Не сохранено",
+    promises: "Обещания", history: "История",
+    st_low: "🔴 заканчивается", st_neg: "❗ минус", st_loss: "❌ убыток", st_slow: "🧊 залежался", st_daily: "🔄 ежедневно",
+    daily_comes: "привозят каждый день", days_left: "хватит на ~{n} дн.", per_day: "{v} {u} в день", frozen: "заморожено {v}",
+    margin: "{v}% прибыли", cost_sell: "себест. {c} → цена {s}", none_here: "В этом разделе товаров нет",
+    stock_empty: "Склад пуст. Напишите боту: <i>пришло 10 мешков муки по 280 тысяч</i>",
+    stock: "Склад", stock_sub: "Стоимость товара <b style=\"color:var(--text)\">{v}</b> (по себестоимости)",
+    f_all: "Все", f_low: "🔴 Заканчивается", f_slow: "🧊 Залежался", f_loss: "❌ Убыток", f_daily: "🔄 Ежедневно",
+    shelf: "📸 Анализ полки", shelf_counted: "{k} видов товара, ~{n} шт.", empty_spots: " · пустых мест: {n}",
+    unrec: "🚨 Незаписанные продажи", vs_photo: "(по сравнению с фото в {t})",
+    unrec_row: "• {name}: на фото −{p}, записано {r} → <b class=\"neg\">{g} {u}</b>", matches: "✅ Разница с утренним фото совпадает с продажами",
+    shelf_low: "🛒 Мало на полке", none_storage: "на складе тоже нет", in_storage: "на складе {v}",
+    not_seen: "👀 Было на прошлом фото, сейчас нет: {list}", not_in_db: "❔ Нет в базе: {list} — запишите приход в боте",
+    evening: "💡 Сфотографируйте вечером ещё раз — найду незаписанные за день продажи.",
+    shelf_hint: "📸 Отправьте боту <b style=\"color:var(--text)\">фото полки</b> — посчитаю товары и покажу, чего мало. Утром и вечером — найду незаписанные продажи.",
+    hist: "История", all_records: "Все записи", k_all: "Все", k_nasiya: "📝 В долг", k_tolov: "💵 Оплата", k_sotuv: "💰 Наличные", k_kirim: "📦 Приход",
+    debt_payment: "оплата долга", more: "Загрузить ещё", h_disputed: "❌ оспорено",
+    hello: "Здравствуйте, {name}!", your_debt: "Ваш долг", pay_day: "🤝 День оплаты: <b>{d}</b>", days_passed: "прошло {n} дн.",
+    no_debt: "Долга нет. Спасибо! 🙏", pending: "🔎 <b style=\"color:var(--text)\">{n} записей</b> ждут вашего подтверждения. Проверьте каждую и нажмите ✅ или ❌.",
+    c_confirmed: "✅ подтверждено", c_disputed: "❌ оспорено", c_payment: "Оплата", c_credit: "В долг", correct: "✅ Верно", wrong: "❌ Ошибка",
+    questions: "Если есть вопросы, обратитесь в магазин.", confirm_dispute: "Сообщить магазину, что эта запись ошибочна?",
+    thanks: "✅ Спасибо!", shop_told: "Магазину сообщено", lang: "Язык",
+    u_dona: "шт", u_kg: "кг", u_litr: "л", u_qop: "меш.", u_pachka: "пач.", u_quti: "кор.", u_blok: "блок", u_shisha: "бут.", u_g: "г",
+  },
+  en: {
+    som: "UZS", mlrd: "B", mln: "M", ming: "K",
+    nav_home: "Home", nav_debt: "Debts", nav_stock: "Stock", nav_hist: "History",
+    p_bugun: "Today", p_hafta: "Week", p_oy: "Month",
+    open_tg: "Open in Telegram", open_tg_t: "This page works inside the Nasiya AI bot.<br>Tap the <b>📊 Shop</b> button in the bot.",
+    reg_first: "Register in the bot first", reg_first_t: "Open the bot and press <b>/start</b>: choose whether you own a shop or are a customer.",
+    load_fail: "Couldn't load data", retry: "Try again",
+    promises_due: "🤝 Payment due", late_days: "{n} days late", today: "today", whole: "full balance", remind_btn: "🔔 Remind",
+    tips: "🧠 Manager tips", no_tips: "🧠 No tips yet — they get sharper as sales grow.",
+    top: "🏆 Top sellers", sales: "Sales", cash: "Cash", credit: "Credit", profit: "Profit",
+    cash_in: "💵 Cash in", payments: "repaid {v}", profit_k: "📈 Profit", approx: "approx.", no_cost: "no cost data",
+    on_credit: "📝 On credit", n_cust: "{n} customers ›", daily_sales: "Daily sales", tap_bar: "Tap a bar",
+    tip_line: "<b>{d} ({w})</b> · sales <b>{s}</b> · cash {c} · credit {n} · profit <b class=\"pos\">{p}</b>",
+    debtors: "Debtors", debt_sub: "Total on credit <b style=\"color:var(--text)\">{amt}</b> · {n} customers",
+    search: "🔍 Search by name", s_sum: "💰 Amount", s_late: "⏰ Overdue", s_prom: "🤝 Promises",
+    all_c: "All customers", only_debt: "Only with a balance", show_debtors: "Debtors", show_all: "Show all",
+    t_days: "⏰ {n} d", days_ago: "{n} days ago", t_limit: "⚠️ limit", t_disputed: "❗ disputed",
+    not_found: "Not found", no_promises: "No open promises", no_debtors: "No one owes anything",
+    back: "‹ Back", loading_fail: "Failed to load",
+    via_tg: "📱 Via Telegram", via_sms: "✉️ Via SMS ({p})", limit_l: "Limit: {v}", exceeded: "— exceeded",
+    confirmed_tag: "✅ confirmed", disputed_tag: "❌ disputed", no_records: "No records",
+    kept: "kept", waiting: "pending", last_rem: "Recent reminders: {list}",
+    linked: "📱 Connected to the bot", not_linked: "Not connected", debt: "Balance", since_pay: "{n} days since last payment",
+    n_disputed: "❗ {n} disputed entries",
+    linked_note: "📱 <b style=\"color:var(--text)\">Connected on Telegram</b> — entries and reminders go to them automatically.",
+    auto_note: " 🤖 Auto-reminder: daily at {h}:00 (when needed).",
+    unlinked_note: "📵 <b style=\"color:var(--text)\">Not connected on Telegram.</b> Add their phone and ask them to open the bot and tap <b style=\"color:var(--text)\">«📱 Share my number»</b> — they'll be connected automatically. Or send the «Link».",
+    b_remind: "Remind", b_link: "Link", b_connect: "Connect", b_call: "Call", b_phone: "Phone",
+    rem_text: "Reminder text", send: "📨 Send", sending: "Sending...", sent: "✅ Sent", resend: "📨 Send again",
+    rem_sent: "✅ Reminder sent", rem_fail: "⚠️ Not sent", error: "⚠️ Error",
+    no_channel: "⚠️ The customer isn't connected and has no phone. Send the link or add a phone first.",
+    share_link: "🔗 Send the connect link",
+    share_text: "Hello! You can see your account at \"{shop}\" here:",
+    settings: "Settings", phone: "Phone", limit: "Limit", limit_ph: "e.g. 500 000", save: "Save", saved: "✅ Saved", not_saved: "Not saved",
+    promises: "Promises", history: "History",
+    st_low: "🔴 running low", st_neg: "❗ negative", st_loss: "❌ loss", st_slow: "🧊 not selling", st_daily: "🔄 daily",
+    daily_comes: "delivered daily", days_left: "~{n} days left", per_day: "{v} {u}/day", frozen: "{v} tied up",
+    margin: "{v}% margin", cost_sell: "cost {c} → price {s}", none_here: "No products here",
+    stock_empty: "Stock is empty. Tell the bot: <i>10 bags of flour arrived, 280,000 each</i>",
+    stock: "Stock", stock_sub: "Stock value <b style=\"color:var(--text)\">{v}</b> (at cost)",
+    f_all: "All", f_low: "🔴 Running low", f_slow: "🧊 Not selling", f_loss: "❌ Loss", f_daily: "🔄 Daily",
+    shelf: "📸 Shelf audit", shelf_counted: "{k} products, ~{n} items", empty_spots: " · empty spots: {n}",
+    unrec: "🚨 Unrecorded sales", vs_photo: "(vs. the {t} photo)",
+    unrec_row: "• {name}: photo −{p}, recorded {r} → <b class=\"neg\">{g} {u}</b>", matches: "✅ The change since the morning photo matches recorded sales",
+    shelf_low: "🛒 Low on the shelf", none_storage: "none in storage", in_storage: "{v} in storage",
+    not_seen: "👀 On the earlier photo, gone now: {list}", not_in_db: "❔ Not in the books: {list} — record a delivery in the bot",
+    evening: "💡 Take another photo tonight — I'll find unrecorded sales.",
+    shelf_hint: "📸 Send the bot a <b style=\"color:var(--text)\">shelf photo</b> — I'll count items and show what's low. Morning and evening photos reveal unrecorded sales.",
+    hist: "History", all_records: "All records", k_all: "All", k_nasiya: "📝 Credit", k_tolov: "💵 Payment", k_sotuv: "💰 Cash", k_kirim: "📦 Stock in",
+    debt_payment: "debt repayment", more: "Load more", h_disputed: "❌ disputed",
+    hello: "Hello, {name}!", your_debt: "Your balance", pay_day: "🤝 Payment date: <b>{d}</b>", days_passed: "{n} days ago",
+    no_debt: "You owe nothing. Thank you! 🙏", pending: "🔎 <b style=\"color:var(--text)\">{n} entries</b> await your confirmation. Check each one and tap ✅ or ❌.",
+    c_confirmed: "✅ confirmed", c_disputed: "❌ disputed", c_payment: "Payment", c_credit: "Credit", correct: "✅ Correct", wrong: "❌ Wrong",
+    questions: "If you have questions, contact the shop.", confirm_dispute: "Tell the shop this entry is wrong?",
+    thanks: "✅ Thank you!", shop_told: "The shop was notified", lang: "Language",
+    u_dona: "pcs", u_kg: "kg", u_litr: "L", u_qop: "bags", u_pachka: "packs", u_quti: "boxes", u_blok: "blocks", u_shisha: "btl", u_g: "g",
+  },
+};
+const LANG_NAMES = { uz: "🇺🇿 O'zbekcha", ru: "🇷🇺 Русский", en: "🇬🇧 English" };
+let LANG = (qs.get("lang") in I18N && qs.get("lang")) || "uz";
+const t = (key, vars) => {
+  let s = (I18N[LANG] && I18N[LANG][key]) ?? I18N.uz[key] ?? key;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  return s;
+};
+const U = u => u ? t("u_" + u) === "u_" + u ? u : t("u_" + u) : "";
+
+const $ = (s, el = document) => el.querySelector(s);
+const root = $("#root"), sheet = $("#sheet"), nav = $("#nav");
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = n => n == null ? "—" : Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+const som = n => `${money(n)} ${t("som")}`;
+const short = n => {
+  if (n == null) return "—";
+  const a = Math.abs(n);
+  if (a >= 1e9) return (n / 1e9).toFixed(1).replace(".0", "") + " " + t("mlrd");
+  if (a >= 1e6) return (n / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(".0", "") + " " + t("mln");
+  if (a >= 1e4) return Math.round(n / 1e3) + " " + t("ming");
+  return money(n);
+};
+const qty = n => (Math.round(n * 100) / 100).toString();
+const haptic = (k = "light") => { try { k === "success" || k === "error" || k === "warning" ? tg.HapticFeedback.notificationOccurred(k) : tg.HapticFeedback.impactOccurred(k); } catch (e) {} };
+let toastTimer;
+function toast(msg) { const el = $("#toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), 2400); }
+const H3 = txt => `<h3 style="margin:16px 4px 8px;font-size:13px;color:var(--hint);text-transform:uppercase;letter-spacing:.4px">${txt}</h3>`;
+
+async function api(path, opts = {}) {
+  let url = "/api" + path;
+  if (DEV_AS) url += (url.includes("?") ? "&" : "?") + "as=" + encodeURIComponent(DEV_AS);
+  const r = await fetch(url, {
+    method: opts.method || "GET",
+    headers: { "X-Telegram-Init-Data": (tg && tg.initData) || "", "Content-Type": "application/json" },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(data.error || ("HTTP " + r.status)); e.status = r.status; e.data = data; throw e; }
+  return data;
+}
+
+const COLORS = ["#e17076", "#7bc862", "#e5ca77", "#65aadd", "#a695e7", "#ee7aae", "#6ec9cb", "#faa774"];
+const avatar = (name, size) => {
+  let h = 0; for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const dim = size ? `width:${size}px;height:${size}px;font-size:${Math.round(size * .4)}px;` : "";
+  return `<div class="av" style="${dim}background:${COLORS[h % COLORS.length]}">${esc(name.trim()[0] || "?").toUpperCase()}</div>`;
+};
+const delta = d => d == null ? "" : `<span class="chip ${d >= 0 ? "up" : "down"}">${d >= 0 ? "▲" : "▼"} ${Math.abs(Math.round(d))}%</span>`;
+
+function fatal(title, text) {
+  nav.classList.add("hidden");
+  root.innerHTML = `<div class="empty" style="padding-top:80px"><div class="e">🏪</div><h2 style="margin:6px 0">${esc(title)}</h2><div class="note">${text}</div></div>`;
+}
+
+/* ---------- til almashtirgich ---------- */
+const langBtn = () => `<button class="langbtn" id="langBtn" aria-label="${t("lang")}">🌐 ${LANG.toUpperCase()}</button>`;
+function bindLang(onChange) {
+  const b = $("#langBtn"); if (!b) return;
+  b.onclick = () => {
+    haptic();
+    const m = document.createElement("div");
+    m.className = "langmenu";
+    m.innerHTML = `<div class="box">${Object.keys(LANG_NAMES).map(k => `<button data-l="${k}" class="${k === LANG ? "on" : ""}">${LANG_NAMES[k]}</button>`).join("")}</div>`;
+    m.onclick = async e => {
+      const x = e.target.closest("button"); m.remove();
+      if (!x || x.dataset.l === LANG) return;
+      LANG = x.dataset.l; haptic("success");
+      try { await api("/me", { method: "POST", body: { lang: LANG } }); } catch (err) {}
+      onChange();
+    };
+    document.body.appendChild(m);
+  };
+}
+
+/* ================= DO'KONCHI ================= */
+const S = { tab: "home", period: "bugun", dash: null, debt: null, debtSort: "sum", debtAll: false, debtQ: "",
+  stock: null, stockF: "all", hist: [], histNext: 0, histKind: "", shop: "" };
+
+function header(title, sub, right = "") {
+  return `<div class="top"><div style="min-width:0"><h1>${esc(title)}</h1>${sub ? `<div class="sub">${sub}</div>` : ""}</div><div class="right">${right}${langBtn()}</div></div>`;
+}
+
+function renderNav() {
+  nav.innerHTML = [["home", "🏠", "nav_home"], ["debtors", "👥", "nav_debt"], ["stock", "📦", "nav_stock"], ["history", "🧾", "nav_hist"]]
+    .map(([k, i, l]) => `<button data-tab="${k}" class="${S.tab === k ? "on" : ""}"><span class="i">${i}</span>${t(l)}</button>`).join("");
+}
+
+function setTab(tab) {
+  S.tab = tab;
+  nav.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  window.scrollTo(0, 0);
+  render();
+}
+nav.addEventListener("click", e => { const b = e.target.closest("button"); if (b) { haptic(); setTab(b.dataset.tab); } });
+
+async function render() {
+  const tab = S.tab;
+  try {
+    if (tab === "home") await renderHome();
+    else if (tab === "debtors") await renderDebtors();
+    else if (tab === "stock") await renderStock();
+    else await renderHistory(true);
+  } catch (e) { showError(e); }
+  bindLang(() => { renderNav(); render(); });
+}
+
+function showError(e) {
+  if (e.status === 401) return fatal(t("open_tg"), t("open_tg_t"));
+  root.innerHTML = `<div class="empty"><div class="e">⚠️</div>${t("load_fail")}<br><button class="more" id="retry">${t("retry")}</button></div>`;
+  $("#retry").onclick = render;
+}
+
+/* ---------- Bosh sahifa ---------- */
+async function renderHome() {
+  const d = S.dash = await api("/dashboard?period=" + S.period);
+  S.shop = d.shop;
+  const k = d.kpi, rev = k.revenue || 0;
+  const cashPct = rev ? (k.cash / rev * 100) : 0;
+  const seg = `<div class="seg" id="seg">${["bugun", "hafta", "oy"].map(v =>
+    `<button data-p="${v}" class="${S.period === v ? "on" : ""}">${t("p_" + v)}</button>`).join("")}</div>`;
+
+  const promises = d.promises.length ? `<div class="card" style="padding:0">
+      <h3 style="padding:14px 16px 0">${t("promises_due")}</h3>
+      ${d.promises.map(p => `<button class="row" data-cust="${p.customer_id}">${avatar(p.name)}
+        <div class="main"><div class="t">${esc(p.name)}</div>
+        <div class="d">${p.late > 0 ? `<span class="tag red">${t("late_days", { n: p.late })}</span>` : `<span class="tag amber">${t("today")}</span>`}
+        <span>${p.amount ? som(p.amount) : t("whole")}</span></div></div>
+        <span class="tag blue">${t("remind_btn")}</span></button>`).join("")}</div>` : "";
+
+  const tips = d.insights.length ? `${H3(t("tips"))}<div class="tips">${d.insights.map(x => `<div class="tipc">${x}</div>`).join("")}</div>`
+    : `<div class="card note">${t("no_tips")}</div>`;
+
+  const top = d.top.length ? `<div class="card"><h3>${t("top")}</h3>${d.top.map((x, i) => {
+      const max = d.top[0].amount || 1;
+      return `<div style="margin:${i ? 10 : 0}px 0 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${esc(x.name)}</span><b>${money(x.amount)}</b></div>
+      <div class="meter"><i style="width:${x.amount / max * 100}%;background:var(--cash)"></i></div></div>`; }).join("")}</div>` : "";
+
+  root.innerHTML = header(d.shop, `${esc(d.title)} · ${esc(d.range)}`) + `<div style="margin:-4px 0 12px">${seg}</div>` + `
+    <div class="card hero">
+      <div class="label">${t("sales")}</div>
+      <div class="big">${money(rev)} <small>${t("som")}</small> ${delta(k.delta)}</div>
+      <div class="split"><span><i class="dot" style="background:var(--cash)"></i>${t("cash")} <b>${money(k.cash)}</b></span>
+        <span><i class="dot" style="background:var(--credit)"></i>${t("credit")} <b>${money(k.credit)}</b></span></div>
+      <div class="bar100"><i style="width:${cashPct}%;background:var(--cash)"></i><i style="width:${rev ? 100 - cashPct : 0}%;background:var(--credit)"></i></div>
+    </div>
+    <div class="grid3">
+      <div class="tile"><div class="k">${t("cash_in")}</div><div class="v">${short(k.cash_in)}</div><div class="s">${t("payments", { v: short(k.paid) })}</div></div>
+      <div class="tile"><div class="k">${t("profit_k")}</div><div class="v ${k.profit < 0 ? "neg" : ""}">${k.profit_known ? short(k.profit) : "—"}</div><div class="s">${k.profit_known ? t("approx") : t("no_cost")}</div></div>
+      <button class="tile link" id="goDebt"><div class="k">${t("on_credit")}</div><div class="v">${short(k.outstanding)}</div><div class="s">${t("n_cust", { n: k.debtors })}</div></button>
+    </div>
+    <div class="card chart"><h3>${t("daily_sales")}</h3><div id="chart"></div>
+      <div class="legend"><span><i class="dot" style="background:var(--cash)"></i>${t("cash")}</span><span><i class="dot" style="background:var(--credit)"></i>${t("credit")}</span><span><i class="dot" style="background:var(--good)"></i>${t("profit")}</span></div>
+      <div class="tip" id="tip">${t("tap_bar")}</div></div>
+    ${promises}${tips}${top}`;
+
+  $("#seg").onclick = e => { const b = e.target.closest("button"); if (b && b.dataset.p !== S.period) { haptic(); S.period = b.dataset.p; render(); } };
+  $("#goDebt").onclick = () => setTab("debtors");
+  root.querySelectorAll("[data-cust]").forEach(b => b.onclick = () => openCustomer(+b.dataset.cust, true));
+  drawChart($("#chart"), d.series);
+}
+
+function drawChart(el, series) {
+  const W = Math.max(280, el.clientWidth || 320), H = 170, padB = 22, padT = 18, padR = 40;
+  const max = Math.max(1, ...series.map(s => s.naqd + s.nasiya));
+  const n = series.length, gap = n > 20 ? 2 : 5, bw = (W - padR - gap * (n - 1)) / n;
+  const y = v => (H - padB) - v / max * (H - padB - padT);
+  let bars = "", labels = "", line = [];
+  series.forEach((s, i) => {
+    const x = i * (bw + gap);
+    const hC = (H - padB) - y(s.naqd), hN = (H - padB) - y(s.nasiya);
+    bars += `<g data-i="${i}" style="cursor:pointer"><rect x="${x}" y="${padT}" width="${bw}" height="${H - padB - padT}" fill="transparent"/>
+      <rect x="${x}" y="${y(s.naqd)}" width="${bw}" height="${Math.max(0, hC)}" rx="2" fill="var(--cash)"/>
+      <rect x="${x}" y="${y(s.naqd) - hN}" width="${bw}" height="${Math.max(0, hN)}" rx="2" fill="var(--credit)"/></g>`;
+    if (n <= 14 || i % 3 === 0 || i === n - 1) labels += `<text x="${i === 0 ? x : x + bw / 2}" y="${H - 6}" text-anchor="${i === 0 ? "start" : "middle"}" font-size="10" fill="var(--hint)">${s.label}</text>`;
+    line.push(`${x + bw / 2},${y(Math.max(0, s.profit))}`);
+  });
+  const grid = [0.5, 1].map(f => `<line x1="0" x2="${W - padR + 4}" y1="${y(max * f)}" y2="${y(max * f)}" stroke="var(--sep)" stroke-dasharray="3 3"/>
+     <text x="${W}" y="${y(max * f) + 3}" text-anchor="end" font-size="10" fill="var(--hint)">${short(max * f)}</text>`).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${bars}${grid}
+    <polyline points="${line.join(" ")}" fill="none" stroke="var(--good)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>${labels}</svg>`;
+  el.querySelectorAll("g[data-i]").forEach(g => g.onclick = () => {
+    const s = series[+g.dataset.i]; haptic();
+    el.querySelectorAll("g[data-i]").forEach(o => o.style.opacity = o === g ? 1 : .45);
+    $("#tip").innerHTML = t("tip_line", { d: s.label, w: s.weekday, s: money(s.naqd + s.nasiya), c: money(s.naqd), n: money(s.nasiya), p: money(s.profit) });
+  });
+}
+
+/* ---------- Qarzdorlar ---------- */
+async function renderDebtors(reload = true) {
+  if (reload || !S.debt) S.debt = await api("/debtors" + (S.debtAll ? "?all=1" : ""));
+  const d = S.debt;
+  let rows = d.customers.filter(c => !S.debtQ || c.name.toLowerCase().includes(S.debtQ.toLowerCase()));
+  if (S.debtSort === "late") rows = rows.slice().sort((a, b) => (b.days_since_pay ?? -1) - (a.days_since_pay ?? -1));
+  if (S.debtSort === "promise") rows = rows.filter(c => c.promise).sort((a, b) => b.promise.late - a.promise.late);
+
+  const list = rows.length ? `<div class="list">${rows.map(c => {
+    const tags = [];
+    if (c.promise) tags.push(c.promise.late > 0 ? `<span class="tag red">🤝 ${t("late_days", { n: c.promise.late })}</span>` :
+      c.promise.late === 0 ? `<span class="tag amber">🤝 ${t("today")}</span>` : `<span class="tag">🤝 ${esc(c.promise.due)}</span>`);
+    if (c.overdue) tags.push(`<span class="tag red">${t("t_days", { n: c.days_since_pay })}</span>`);
+    else if (c.days_since_pay != null && c.balance > 0) tags.push(`<span>${t("days_ago", { n: c.days_since_pay })}</span>`);
+    if (c.over_limit) tags.push(`<span class="tag amber">${t("t_limit")}</span>`);
+    if (c.disputed) tags.push(`<span class="tag red">${t("t_disputed")}</span>`);
+    if (c.linked) tags.push(`<span class="tag blue">📱</span>`);
+    return `<button class="row" data-cust="${c.id}">${avatar(c.name)}<div class="main"><div class="t">${esc(c.name)}</div>
+      <div class="d">${tags.join("")}</div></div><div class="amt ${c.balance > 0 ? "" : "pos"}">${money(c.balance)}<small>${t("som")}</small></div></button>`;
+  }).join("")}</div>` : `<div class="empty"><div class="e">${S.debtQ ? "🔍" : "🎉"}</div>${S.debtQ ? t("not_found") : S.debtSort === "promise" ? t("no_promises") : t("no_debtors")}</div>`;
+
+  const focused = document.activeElement && document.activeElement.id === "q";
+  root.innerHTML = header(t("debtors"), t("debt_sub", { amt: som(d.outstanding), n: d.count })) + `
+    <input class="search" id="q" placeholder="${t("search")}" value="${esc(S.debtQ)}" autocomplete="off">
+    <div class="chips" id="sort">${[["sum", "s_sum"], ["late", "s_late"], ["promise", "s_prom"]].map(([v, l]) =>
+      `<button data-s="${v}" class="${S.debtSort === v ? "on" : ""}">${t(l)}</button>`).join("")}</div>
+    <div class="toggle"><span>${S.debtAll ? t("all_c") : t("only_debt")}</span><button id="all">${S.debtAll ? t("show_debtors") : t("show_all")}</button></div>
+    ${list}`;
+  const q = $("#q");
+  q.oninput = () => { S.debtQ = q.value; renderDebtors(false); bindLang(() => { renderNav(); render(); }); };
+  if (focused) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  $("#sort").onclick = e => { const b = e.target.closest("button"); if (b) { haptic(); S.debtSort = b.dataset.s; renderDebtors(false); bindLang(() => { renderNav(); render(); }); } };
+  $("#all").onclick = () => { S.debtAll = !S.debtAll; render(); };
+  root.querySelectorAll("[data-cust]").forEach(b => b.onclick = () => openCustomer(+b.dataset.cust));
+}
+
+/* ---------- Mijoz kartochkasi ---------- */
+function closeSheet() {
+  sheet.classList.remove("open");
+  if (tg) tg.BackButton.hide();
+  if (S.tab === "debtors" || S.tab === "home") render();
+}
+if (tg) tg.BackButton.onClick(closeSheet);
+
+async function openCustomer(id, remindNow = false) {
+  haptic();
+  sheet.innerHTML = `<div class="bar"><button id="back">${t("back")}</button></div><div class="wrap"><div class="sk" style="height:150px"></div></div>`;
+  sheet.classList.add("open"); sheet.scrollTop = 0;
+  $("#back").onclick = closeSheet;
+  if (tg) tg.BackButton.show();
+  try { renderCustomer(await api("/customers/" + id), remindNow); }
+  catch (e) { sheet.querySelector(".wrap").innerHTML = `<div class="empty"><div class="e">⚠️</div>${t("loading_fail")}</div>`; }
+}
+
+function renderCustomer(c, remindNow) {
+  const chan = { telegram: t("via_tg"), sms: t("via_sms", { p: esc(c.phone) }) }[c.channel];
+  const limitBar = c.limit ? `<div class="meter" style="margin-top:10px"><i style="width:${Math.min(100, c.balance / c.limit * 100)}%;background:${c.over_limit ? "var(--bad)" : "var(--accent)"}"></i></div>
+     <div class="note" style="margin-top:4px">${t("limit_l", { v: som(c.limit) })} ${c.over_limit ? `<b class="neg">${t("exceeded")}</b>` : ""}</div>` : "";
+  const st = { confirmed: ` <span class="tag green">${t("confirmed_tag")}</span>`, disputed: ` <span class="tag red">${t("disputed_tag")}</span>` };
+  const items = x => esc(x.items.map(i => `${i.name} ${qty(i.qty)} ${U(i.unit)}`).join(", "));
+  const txs = c.transactions.length ? `<div class="list">${c.transactions.map(x => `<div class="row noav">
+      <div class="ic">${x.icon}</div><div class="main"><div class="t">${x.label}${st[x.status] || ""}</div>
+      <div class="items">${x.items.length ? items(x) : esc(x.source || "")}</div>
+      <div class="d">${x.date}</div></div>
+      <div class="amt ${x.kind === "tolov" ? "pos" : "cr"}">${x.kind === "tolov" ? "−" : "+"}${money(x.amount)}</div></div>`).join("")}</div>`
+    : `<div class="empty">${t("no_records")}</div>`;
+  const promises = c.promises.length ? `<div class="list">${c.promises.map(p => `<div class="row noav"><div class="ic">🤝</div><div class="main">
+      <div class="t">${esc(p.due)}</div><div class="d">${p.amount ? som(p.amount) : t("whole")}</div></div>
+      ${p.status === "kept" ? `<span class="tag green">${t("kept")}</span>` : p.late > 0 ? `<span class="tag red">${t("late_days", { n: p.late })}</span>` : p.late === 0 ? `<span class="tag amber">${t("today")}</span>` : `<span class="tag">${t("waiting")}</span>`}</div>`).join("")}</div>` : "";
+  const reminders = c.reminders.length ? `<div class="note" style="margin:0 4px 12px">${t("last_rem", { list: c.reminders.slice(0, 3).map(r => `${r.date} ${r.channel === "sms" ? "✉️" : "📱"}${r.ok ? "" : "⚠️"}`).join(" · ") })}</div>` : "";
+
+  sheet.innerHTML = `<div class="bar"><button id="back">${t("back")}</button></div><div class="wrap" style="padding-top:0">
+    <div style="display:flex;align-items:center;gap:12px;margin:4px 2px 14px">${avatar(c.name, 52)}
+      <div style="min-width:0"><h1 style="margin:0;font-size:21px">${esc(c.name)}</h1>
+      <div class="sub" style="color:var(--hint);font-size:13px">${c.linked ? t("linked") : t("not_linked")}${c.phone ? " · +" + esc(c.phone) : ""}</div></div></div>
+    <div class="card hero"><div class="label">${t("debt")}</div><div class="big ${c.balance <= 0 ? "pos" : ""}">${money(c.balance)} <small>${t("som")}</small></div>
+      <div class="note">${c.days_since_pay != null ? t("since_pay", { n: c.days_since_pay }) : ""}${c.disputed ? ` · <b class="neg">${t("n_disputed", { n: c.disputed })}</b>` : ""}</div>${limitBar}</div>
+    <div class="card note" style="font-size:13px">${c.linked ? t("linked_note") + (c.auto_remind ? t("auto_note", { h: c.remind_hour }) : "") : t("unlinked_note")}</div>
+    <div class="btns">
+      <button class="btn" id="bRemind" ${c.balance > 0 ? "" : "disabled"}><span>🔔</span>${t("b_remind")}</button>
+      <button class="btn ghost" id="bLink"><span>🔗</span>${c.linked ? t("b_link") : t("b_connect")}</button>
+      ${c.phone ? `<a class="btn ghost" href="tel:+${esc(c.phone)}" style="text-decoration:none"><span>📞</span>${t("b_call")}</a>` : `<button class="btn ghost" id="bPhone"><span>📞</span>${t("b_phone")}</button>`}
+    </div>
+    <div id="remindBox" class="card hidden"><h3>${t("rem_text")}</h3><div class="quote">${esc(c.draft)}</div>
+      ${c.channel ? `<div class="note" style="margin-bottom:10px">${chan}</div><button class="btn" id="bSend">${t("send")}</button>`
+        : `<div class="note" style="margin-bottom:10px">${t("no_channel")}</div><button class="btn" id="bShare2">${t("share_link")}</button>`}</div>
+    ${H3(t("settings"))}
+    <div class="list"><div class="field"><label>${t("phone")}</label><input id="fPhone" inputmode="tel" placeholder="90 123 45 67" value="${esc(c.phone ? c.phone.replace(/^998/, "") : "")}"></div>
+      <div class="field"><label>${t("limit")}</label><input id="fLimit" inputmode="numeric" placeholder="${t("limit_ph")}" value="${c.limit ? money(c.limit) : ""}"></div>
+      <div class="err hidden" id="fErr"></div></div>
+    <button class="btn ghost" id="bSave" style="margin-bottom:16px">${t("save")}</button>
+    ${promises ? H3(t("promises")) + promises : ""}
+    ${H3(t("history"))}${reminders}${txs}</div>`;
+
+  $("#back").onclick = closeSheet;
+  const box = $("#remindBox");
+  const share = () => {
+    haptic();
+    const url = `https://t.me/share/url?url=${encodeURIComponent(c.link_url)}&text=${encodeURIComponent(t("share_text", { shop: S.shop }))}`;
+    if (tg && tg.openTelegramLink) tg.openTelegramLink(url); else window.open(url, "_blank");
+  };
+  $("#bRemind").onclick = () => { haptic(); box.classList.toggle("hidden"); if (!box.classList.contains("hidden")) box.scrollIntoView({ behavior: "smooth", block: "center" }); };
+  $("#bLink").onclick = share;
+  if ($("#bShare2")) $("#bShare2").onclick = share;
+  if ($("#bPhone")) $("#bPhone").onclick = () => { $("#fPhone").focus(); $("#fPhone").scrollIntoView({ block: "center" }); };
+  if ($("#bSend")) $("#bSend").onclick = async e => {
+    const b = e.currentTarget; b.disabled = true; b.textContent = t("sending");
+    try {
+      const r = await api(`/customers/${c.id}/remind`, { method: "POST" });
+      if (r.ok) { haptic("success"); toast(t("rem_sent")); b.textContent = t("sent"); }
+      else { haptic("error"); toast(t("rem_fail")); b.disabled = false; b.textContent = t("resend"); }
+    } catch (err) { haptic("error"); toast(t("error")); b.disabled = false; b.textContent = t("send"); }
+  };
+  $("#bSave").onclick = async e => {
+    const b = e.currentTarget, err = $("#fErr"); b.disabled = true; err.classList.add("hidden");
+    try {
+      const r = await api("/customers/" + c.id, { method: "POST", body: { phone: $("#fPhone").value.trim(), limit: $("#fLimit").value.replace(/\s/g, "") } });
+      haptic("success"); toast(t("saved")); renderCustomer(r);
+    } catch (x) {
+      haptic("error"); b.disabled = false;
+      const f = (x.data && x.data.fields) || {}; err.textContent = Object.values(f).join(" · ") || t("not_saved"); err.classList.remove("hidden");
+    }
+  };
+  if (remindNow && c.balance > 0) { box.classList.remove("hidden"); }
+}
+
+/* ---------- Ombor ---------- */
+const STOCK_TAGS = { low: ["red", "st_low"], negative: ["red", "st_neg"], loss: ["red", "st_loss"], slow: ["amber", "st_slow"], daily: ["blue", "st_daily"], ok: ["green", null] };
+async function renderStock(reload = true) {
+  if (reload || !S.stock) S.stock = await api("/stock");
+  const d = S.stock;
+  const counts = { low: 0, slow: 0, loss: 0 };
+  d.products.forEach(p => { if (p.status === "negative") counts.low++; else if (counts[p.status] != null) counts[p.status]++; });
+  const F = S.stockF;
+  const rows = d.products.filter(p => F === "all" || p.status === F || (F === "low" && p.status === "negative"));
+  const list = rows.length ? `<div class="list">${rows.map(p => {
+    const [cls, key] = STOCK_TAGS[p.status];
+    const days = p.days_left;
+    const pct = days == null ? (p.status === "slow" ? 100 : 0) : Math.min(100, days / 14 * 100);
+    const color = p.status === "low" || p.status === "negative" ? "var(--bad)" : p.status === "slow" ? "var(--warn)" : "var(--good)";
+    const info = [];
+    if (p.daily) info.push(t("daily_comes"));
+    else if (days != null) info.push(t("days_left", { n: Math.round(days) }));
+    if (p.avg) info.push(t("per_day", { v: qty(p.avg), u: U(p.unit) }));
+    if (p.frozen) info.push(`<b class="cr">${t("frozen", { v: som(p.frozen) })}</b>`);
+    const marg = p.margin_pct != null ? `<small class="${p.margin_pct < 0 ? "neg" : ""}">${t("margin", { v: (p.margin_pct > 0 ? "+" : "") + p.margin_pct })}</small>` : "<small>&nbsp;</small>";
+    return `<div class="row noav" style="align-items:flex-start"><div class="main">
+      <div class="t">${esc(p.name)} <span class="tag ${cls}" style="margin-left:4px">${key ? t(key) : "✓"}</span></div>
+      <div class="d">${info.join(" · ")}</div>
+      ${p.daily ? "" : `<div class="meter"><i style="width:${pct}%;background:${color}"></i></div>`}
+      ${p.cost != null || p.sell != null ? `<div class="d" style="margin-top:4px">${t("cost_sell", { c: money(p.cost), s: money(p.sell) })}</div>` : ""}</div>
+      <div class="amt">${qty(p.stock)} ${esc(U(p.unit))}${marg}</div></div>`;
+  }).join("")}</div>` : `<div class="empty"><div class="e">📦</div>${d.products.length ? t("none_here") : t("stock_empty")}</div>`;
+
+  const sh = d.shelf;
+  const line = h => `<div class="d" style="color:var(--text);margin-top:4px">${h}</div>`;
+  const shelfCard = sh ? `<div class="card"><h3>${t("shelf")} · ${esc(sh.date)}</h3>
+      <div class="note">${t("shelf_counted", { k: sh.kinds, n: qty(sh.total) })}${sh.empty_spots ? t("empty_spots", { n: sh.empty_spots }) : ""}</div>
+      ${sh.unrecorded.length ? `<div style="margin-top:10px"><b class="neg">${t("unrec")}</b> <span class="note">${t("vs_photo", { t: esc(sh.prev_time) })}</span>
+        ${sh.unrecorded.map(u => line(t("unrec_row", { name: esc(u.name), p: qty(u.photo_sold), r: qty(u.recorded), g: qty(u.gap), u: esc(U(u.unit)) }) + (u.money ? ` (~${som(u.money)})` : ""))).join("")}</div>`
+        : sh.has_prev ? `<div class="note pos" style="margin-top:8px">${t("matches")}</div>` : ""}
+      ${sh.low.length ? `<div style="margin-top:10px"><b>${t("shelf_low")}</b>${sh.low.map(x => line(`• ${esc(x.name)}: ${qty(x.count)} ${esc(U(x.unit))} — ${x.reorder ? `<b class="neg">${t("none_storage")}</b>` : t("in_storage", { v: qty(x.stock) })}`)).join("")}</div>` : ""}
+      ${sh.missing.length ? `<div class="note" style="margin-top:8px">${t("not_seen", { list: sh.missing.map(esc).join(", ") })}</div>` : ""}
+      ${sh.unknown.length ? `<div class="note" style="margin-top:8px">${t("not_in_db", { list: sh.unknown.map(esc).join(", ") })}</div>` : ""}
+      ${sh.observations.length ? `<div class="note" style="margin-top:8px">🧠 ${sh.observations.map(esc).join("<br>🧠 ")}</div>` : ""}
+      ${sh.has_prev ? "" : `<div class="note" style="margin-top:8px">${t("evening")}</div>`}
+    </div>` : `<div class="card note">${t("shelf_hint")}</div>`;
+
+  root.innerHTML = header(t("stock"), t("stock_sub", { v: som(d.total_value) })) + shelfCard + `
+    <div class="chips" id="sf">${[["all", t("f_all")], ["low", `${t("f_low")} ${counts.low || ""}`], ["slow", `${t("f_slow")} ${counts.slow || ""}`], ["loss", `${t("f_loss")} ${counts.loss || ""}`], ["daily", t("f_daily")]]
+      .map(([v, l]) => `<button data-f="${v}" class="${F === v ? "on" : ""}">${l}</button>`).join("")}</div>${list}`;
+  $("#sf").onclick = e => { const b = e.target.closest("button"); if (b) { haptic(); S.stockF = b.dataset.f; renderStock(false); bindLang(() => { renderNav(); render(); }); } };
+}
+
+/* ---------- Tarix ---------- */
+async function renderHistory(reset) {
+  if (reset) { S.hist = []; S.histNext = 0; }
+  if (S.histNext != null) {
+    const r = await api(`/transactions?offset=${S.histNext}${S.histKind ? "&kind=" + S.histKind : ""}`);
+    S.hist = S.hist.concat(r.transactions); S.histNext = r.next;
+  }
+  const st = { confirmed: ' <span class="tag green">✅</span>', disputed: ` <span class="tag red">${t("h_disputed")}</span>` };
+  let lastDay = "";
+  const list = S.hist.length ? S.hist.map(x => {
+    const day = x.date.slice(0, 5);
+    const head = day !== lastDay ? `${lastDay ? "</div>" : ""}<h3 style="margin:14px 4px 6px;font-size:13px;color:var(--hint)">${day}</h3><div class="list">` : "";
+    lastDay = day;
+    const sign = x.kind === "kirim" ? "−" : "+";
+    const cls = x.kind === "nasiya" ? "cr" : x.kind === "kirim" ? "" : "pos";
+    const title = x.customer ? esc(x.customer) : x.label;
+    const sub = x.items.length ? esc(x.items.map(i => `${i.name} ${qty(i.qty)} ${U(i.unit)}`).join(", ")) : (x.kind === "tolov" ? t("debt_payment") : esc(x.source || ""));
+    return `${head}<div class="row noav" ${x.customer_id ? `data-cust="${x.customer_id}"` : ""}><div class="ic">${x.icon}</div><div class="main">
+      <div class="t">${title}${st[x.status] || ""}</div><div class="items" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.customer ? x.label + " · " : ""}${sub}</div></div>
+      <div class="amt ${cls}">${sign}${money(x.amount)}<small>${x.date.slice(6)}${x.source_type === "voice" ? " 🎤" : x.source_type === "photo" ? " 📷" : ""}</small></div></div>`;
+  }).join("") + "</div>" : `<div class="empty"><div class="e">🧾</div>${t("no_records")}</div>`;
+
+  root.innerHTML = header(t("hist"), t("all_records")) + `
+    <div class="chips" id="hk">${["", "nasiya", "tolov", "sotuv", "kirim"].map(v => `<button data-k="${v}" class="${S.histKind === v ? "on" : ""}">${t(v ? "k_" + v : "k_all")}</button>`).join("")}</div>
+    ${list}${S.histNext != null ? `<button class="more" id="more">${t("more")}</button>` : ""}`;
+  $("#hk").onclick = e => { const b = e.target.closest("button"); if (b) { haptic(); S.histKind = b.dataset.k; render(); } };
+  if ($("#more")) $("#more").onclick = () => renderHistory(false).then(() => bindLang(() => { renderNav(); render(); })).catch(showError);
+  root.querySelectorAll("[data-cust]").forEach(b => { b.style.cursor = "pointer"; b.onclick = () => openCustomer(+b.dataset.cust); });
+}
+
+/* ================= MIJOZ ================= */
+async function renderMy() {
+  const d = await api("/my");
+  LANG = d.lang in I18N ? d.lang : LANG;
+  const pending = d.transactions.filter(x => x.can_review).length;
+  const st = { confirmed: `<span class="tag green">${t("c_confirmed")}</span>`, disputed: `<span class="tag red">${t("c_disputed")}</span>` };
+  root.innerHTML = header(d.shop, t("hello", { name: esc(d.name) })) + `
+    <div class="card hero"><div class="label">${t("your_debt")}</div><div class="big ${d.balance <= 0 ? "pos" : ""}">${money(d.balance)} <small>${t("som")}</small></div>
+      ${d.promise ? `<div class="note">${t("pay_day", { d: esc(d.promise.due) })}${d.promise.amount ? ` · ${som(d.promise.amount)}` : ""}${d.promise.late > 0 ? ` <span class="tag red">${t("days_passed", { n: d.promise.late })}</span>` : ""}</div>` : ""}
+      ${d.balance <= 0 ? `<div class="note">${t("no_debt")}</div>` : ""}</div>
+    ${pending ? `<div class="card note">${t("pending", { n: pending })}</div>` : ""}
+    ${H3(t("history"))}
+    ${d.transactions.length ? `<div class="list">${d.transactions.map(x => `<div class="row noav" style="align-items:flex-start" id="tx${x.id}">
+      <div class="ic">${x.icon}</div><div class="main"><div class="t">${x.kind === "tolov" ? t("c_payment") : t("c_credit")} ${st[x.status] || ""}</div>
+      <div class="items">${x.items.length ? esc(x.items.map(i => `${i.name} ${qty(i.qty)} ${U(i.unit)}`).join(", ")) : ""}</div><div class="d">${x.date}</div>
+      ${x.can_review ? `<div class="review"><button class="yes" data-r="confirmed" data-id="${x.id}">${t("correct")}</button><button class="no" data-r="disputed" data-id="${x.id}">${t("wrong")}</button></div>` : ""}</div>
+      <div class="amt ${x.kind === "tolov" ? "pos" : "cr"}">${x.kind === "tolov" ? "−" : "+"}${money(x.amount)}</div></div>`).join("")}</div>`
+      : `<div class="empty">${t("no_records")}</div>`}
+    <div class="note" style="text-align:center;margin-top:16px">${t("questions")}<br>Nasiya AI 🤝</div>`;
+  bindLang(() => renderMy().catch(showError));
+  root.querySelectorAll("[data-r]").forEach(b => b.onclick = async () => {
+    const status = b.dataset.r;
+    if (status === "disputed" && tg && tg.showConfirm) {
+      const ok = await new Promise(res => tg.showConfirm(t("confirm_dispute"), res));
+      if (!ok) return;
+    }
+    try { await api("/my/tx/" + b.dataset.id, { method: "POST", body: { status } }); haptic(status === "confirmed" ? "success" : "warning");
+      toast(status === "confirmed" ? t("thanks") : t("shop_told")); renderMy(); }
+    catch (e) { toast(t("error")); }
+  });
+}
+
+/* ================= START ================= */
+(async function start() {
+  try {
+    const me = await api("/me");
+    if (me.lang in I18N) LANG = me.lang;
+    if (me.role === "customer") { await renderMy(); return; }
+    renderNav();
+    nav.classList.remove("hidden");
+    await render();
+  } catch (e) {
+    if (e.status === 401) fatal(t("open_tg"), t("open_tg_t"));
+    else if (e.status === 403) fatal(t("reg_first"), t("reg_first_t"));
+    else showError(e);
+  }
+})();
+</script>
+{% endverbatim %}
+</body>
+</html>
